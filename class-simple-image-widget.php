@@ -59,6 +59,7 @@ class Simple_Image_Widget extends WP_Widget {
 		// Copy the original text so it can be passed to hooks.
 		$instance['text_raw'] = $instance['text'];
 		$instance['text'] = apply_filters( 'widget_text', empty( $instance['text'] ) ? '' : $instance['text'], $instance, $this->id_base );
+		$instance['ga_code'] = apply_filters( 'widget_text', empty( $instance['ga_code'] ) ? '' : $instance['ga_code'], $instance, $this->id_base );
 
 		// Start building the output.
 		$output = '';
@@ -97,7 +98,7 @@ class Simple_Image_Widget extends WP_Widget {
 		$instance['link_close'] = '';
 		if ( ! empty ( $instance['link'] ) ) {
 			$target = ( empty( $instance['new_window'] ) ) ? '' : ' target="_blank"';
-			$instance['link_open'] = '<a href="' . esc_url( $instance['link'] ) . '"' . $target . '>';
+			$instance['link_open'] = '<a onClick="' . $instance['ga_code'] . '" href="' . esc_url( $instance['link'] ) . '"' . $target . '>';
 			$instance['link_close'] = '</a>';
 		}
 
@@ -107,7 +108,7 @@ class Simple_Image_Widget extends WP_Widget {
 			if ( $inside = apply_filters( 'simple_image_widget_output', '', $args, $instance, $this->id_base ) ) {
 				$output .= $inside;
 			} else {
-				$output .= ( empty( $instance['title'] ) ) ? '' : $args['before_title']. $instance['title'] . $args['after_title'];
+				$output .= ( empty( $instance['title'] ) ) ? '' : $args['before_title']. $instance['link_open'] . $instance['title'] . $instance['link_close'] . $args['after_title'];
 
 				// Add the image.
 				if ( ! empty( $instance['image_id'] ) ) {
@@ -128,15 +129,16 @@ class Simple_Image_Widget extends WP_Widget {
 					);
 				}
 
+				// Add a more link.
+				if ( ! empty( $instance['link_open'] ) && ! empty( $instance['link_text'] ) ) {
+					$output .= '<p class="more">' . $instance['link_open'] . $instance['link_text'] . $instance['link_close'] . '</p>';
+				}
+
 				// Add the text.
 				if ( ! empty( $instance['text'] ) ) {
 					$output .= apply_filters( 'the_content', $instance['text'] );
 				}
 
-				// Add a more link.
-				if ( ! empty( $instance['link_open'] ) && ! empty( $instance['link_text'] ) ) {
-					$output .= '<p class="more">' . $instance['link_open'] . $instance['link_text'] . $instance['link_close'] . '</p>';
-				}
 			}
 
 		$output .= $args['after_widget'];
@@ -160,6 +162,7 @@ class Simple_Image_Widget extends WP_Widget {
 			'new_window' => '',
 			'title'      => '',
 			'text'       => '',
+			'ga_code'    => '',
 		) );
 
 		$instance['image_id'] = absint( $instance['image_id'] );
@@ -276,6 +279,15 @@ class Simple_Image_Widget extends WP_Widget {
 							<?php
 							break;
 
+						case 'ga_code' :
+							?>
+							<p>
+								<label for="<?php echo $this->get_field_id( 'ga_code' ); ?>"><?php _e( 'Google Analytics TrackEvent code:', 'simple-image-widget' ); ?></label>
+								<textarea name="<?php echo $this->get_field_name( 'ga_code' ); ?>" id="<?php echo $this->get_field_id( 'ga_code' ); ?>" rows="4" class="widefat"><?php echo esc_textarea( $instance['ga_code'] ); ?></textarea>
+							</p>
+							<?php
+							break;
+
 						default :
 							// Custom fields can be added using this action.
 							do_action( 'simple_image_widget_field-' . sanitize_key( $field ), $instance, $this );
@@ -298,7 +310,7 @@ class Simple_Image_Widget extends WP_Widget {
 	 * @since 3.0.0
 	 */
 	function form_fields() {
-		$fields = array( 'link', 'link_text', 'text' );
+		$fields = array( 'link', 'link_text', 'text', 'ga_code' );
 
 		// Don't show the image size field for users with older WordPress versions.
 		if ( ! is_simple_image_widget_legacy() ) {
@@ -324,6 +336,9 @@ class Simple_Image_Widget extends WP_Widget {
 		$instance['link_text'] = wp_kses_data( $new_instance['link_text'] );
 		$instance['new_window'] = isset( $new_instance['new_window'] );
 		$instance['text'] = wp_kses_data( $new_instance['text'] );
+
+		$instance['ga_code'] = wp_kses_data( $new_instance['ga_code'] );
+
 
 		$instance['image'] = esc_url_raw( $new_instance['image'] ); // Legacy image URL.
 		if ( empty( $instance['image'] ) ) {
